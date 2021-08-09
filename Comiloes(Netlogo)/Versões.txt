@@ -1,0 +1,21 @@
+• Versão 1
+	
+ - Trabalho com as funções basicas pedidas no inunciado
+
+
+• Versão 2-1
+ 
+ - Adicionada uma alteracão feita no aparecimento dos lixos.
+	* Apenas voltam a reaparecer quando os mesmo sao depositados por um limpador.
+	* Limpadores têm contadores dos lixos que recolhem para assim depois ser feita a reposição.
+
+
+• Versão 2-2
+ 
+ - Adicionada uma alteração nos limpadores quanto ao consumo dos alimentos
+	* Os limpadores apenas consomem alimento por onde passam se a sua energia estiver a baixo de 300% da sua energia inicial, para que assim exista mais alimento para os comilões.
+
+• Versão 2-3
+
+ - Adicionada a reprodução dos comiloes (Com um Switch na interfase)
+	* Caso um comilão tenha mais de 900% da energia inicial este faz com que apareca outro comilão no ambiente e divide a sua energia com ele.
