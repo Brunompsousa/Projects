@@ -1,0 +1,822 @@
+/*A)Implementar os mecanismos necessários a garantir a integridade dos dados que não
+seja assegurada por restrições da BD, incluindo as restrições do preço das propostas
+e pedidos e o volume da oferta e procura disponível.*/
+COMPRADORES_NAO_EXISTEM EXCEPTION;
+  PRAGMA EXCEPTION_INIT(COMPRADORES_NAO_EXISTEM,-20113);
+  --Compradores existem?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM COMPRADOR;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE COMPRADORES_NAO_EXISTEM;
+  END IF;
+  
+VENDEDORES_NAO_EXISTEM EXCEPTION;
+  PRAGMA EXCEPTION_INIT(VENDEDORES_NAO_EXISTEM,-20114);
+  --Vendedores existem?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM VENDEDOR;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE LEILOES_NAO_EXISTEM;
+  END IF;
+  
+LEILOES_NAO_EXISTEM EXCEPTION;
+  PRAGMA EXCEPTION_INIT(LEILOES_NAO_EXISTEM,-20115);
+  --Leilões existem?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM LEILAO;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE LEILOES_NAO_EXISTEM;
+  END IF;
+  
+ANUNCIOS_NAO_EXISTEM EXCEPTION;
+  PRAGMA EXCEPTION_INIT(ANUNCIOS_NAO_EXISTEM,-20116);
+  --Anúncios existem?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM ANUNCIO;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE ANUNCIOS_NAO_EXISTEM;
+  END IF;
+  
+PRODUTOS_NAO_EXISTEM EXCEPTION;
+  PRAGMA EXCEPTION_INIT(PRODUTOS_NAO_EXISTEM,-20117);
+  --Produtos existem?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM PRODUTO;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE PRODUTOS_NAO_EXISTEM;
+  END IF;
+
+
+
+/*B) Criar o procedimento propostas_compra que recebe o código de um produto e o valor
+máximo que o comprador está disposto a dar por unidade. Com estes valores o
+procedimento deverá submeter propostas aos leiloes a decorrer do vendedor com o
+código numero 1. O procedimento deve lançar exceções (ver exceções abaixo).-->*/
+CREATE OR REPLACE PROCEDURE PROPOSTAS_COMPRA(CODPROD NUMBER, PRECO_MAX NUMBER, COD_COMPRADOR NUMBER)
+IS 
+
+--Excecões
+ID_VENDEDOR EXCEPTION;
+  PRAGMA EXCEPTION_INIT (ID_VENDEDOR, -20109);
+ID_COMPRADOR EXCEPTION;
+  PRAGMA EXCEPTION_INIT (ID_COMPRADOR, -20110);
+ID_PRODUTO EXCEPTION;
+  PRAGMA EXCEPTION_INIT (ID_PRODUTO, -20102);
+LEILAO EXCEPTION;
+  PRAGMA EXCEPTION_INIT (LEILAO, -20108);
+
+--Variáveis
+R_EXCEPTION NUMBER;
+PRECO_ATUAL_AUX NUMBER;
+ID_LEILAO_AUX NUMBER;
+
+--Cursor 
+CURSOR C1 IS SELECT LEILAO.ID_LEILAO, LEILAO.PRECO_ATUAL
+                                    FROM LEILAO
+                                    WHERE LEILAO.ID_PRODUTO=CODPROD AND LEILAO.ID_VENDEDOR=1 AND LEILAO.DATA_FINAL IS NULL;
+                          
+BEGIN 
+
+  --Vendedor existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM VENDEDOR
+  WHERE ID_VENDEDOR=1;
+  --Se o vendedor não existe lança exceção 
+  IF R_EXCEPTION=0 THEN
+    RAISE ID_VENDEDOR;
+  END IF;
+  --Comprador existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM COMPRADOR
+  WHERE ID_COMPRADOR=COD_COMPRADOR;
+  --Se o comprador não existe lança exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE ID_COMPRADOR;
+  END IF;
+  --Código do produto inválido?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM PRODUTO
+  WHERE ID_PRODUTO=CODPROD;
+  --Se o produto não existir lança exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE ID_PRODUTO;
+  END IF;
+  --Existem leilões com esse produto?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM LEILAO
+  WHERE ID_VENDEDOR=1  AND ID_PRODUTO=CODPROD;
+  --Se não existirem leilões manda exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE LEILAO;
+  END IF;
+  
+  OPEN C1;
+  LOOP
+    FETCH C1 INTO ID_LEILAO_AUX, PRECO_ATUAL_AUX;
+    EXIT WHEN C1%NOTFOUND;
+    
+      IF (PRECO_MAX > PRECO_ATUAL_AUX)  OR (PRECO_ATUAL_AUX IS NULL) THEN
+        UPDATE LEILAO 
+        SET PRECO_ATUAL=PRECO_MAX
+        WHERE ID_LEILAO=ID_LEILAO_AUX;
+      END IF;
+      
+      IF(PRECO_MAX < PRECO_ATUAL_AUX) THEN
+        DBMS_OUTPUT.PUT_LINE('Não consegue superar a proposta atual do leilão ' || ID_LEILAO_AUX); 
+      END IF;
+      
+      IF(PRECO_MAX=PRECO_ATUAL_AUX) THEN
+        DBMS_OUTPUT.PUT_LINE('Proposta dada no leilão ' || ID_LEILAO_AUX || ' é igual à proposta atual.');
+      END IF;
+        
+  END LOOP;
+  CLOSE C1;
+  
+  
+  EXCEPTION
+    WHEN ID_VENDEDOR THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe o vendedor: 1');
+    WHEN ID_COMPRADOR THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe o comprador: ' || COD_COMPRADOR);
+    WHEN ID_PRODUTO THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Código de produto ' || CODPROD || ' inválido.');   
+    WHEN LEILAO THEN
+       DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram realizados leilões do produto ' || CODPROD);
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');
+          
+END;
+/*TESTE
+ROLLBACK;
+SET SERVEROUTPUT ON
+EXECUTE PROPOSTAS_COMPRA(23,815,1);*/
+
+
+
+/*C) Criar a função valor_venda que recebe como argumento um código de um produto e
+retorna o valor mais alto da venda efetuada desse produto nos últimos 3 meses. A
+função deve lançar exceções (ver exceções abaixo).*/
+CREATE OR REPLACE FUNCTION VALOR_VENDA(COD_PRODUTO NUMBER)
+RETURN NUMBER 
+IS
+
+--Excecões
+ID_PRODUTO EXCEPTION;
+  PRAGMA EXCEPTION_INIT (ID_PRODUTO, -20102);
+
+--Variáveis
+R_EXCEPTION NUMBER;
+VALOR_MAIS_ALTO_ANUNCIO NUMBER;
+VALOR_MAIS_ALTO_LEILAO NUMBER;
+
+BEGIN
+
+--Código do produto inválido?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM PRODUTO
+  WHERE ID_PRODUTO=COD_PRODUTO;
+  --Se o produto não existir lança exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE ID_PRODUTO;
+  END IF;
+
+  SELECT * INTO VALOR_MAIS_ALTO_ANUNCIO
+  FROM (SELECT ANUNCIO.PRECO_CV 
+        FROM ANUNCIO
+        WHERE ANUNCIO.ID_PRODUTO=COD_PRODUTO AND (ANUNCIO.DATA_FINAL BETWEEN (add_months(trunc(sysdate,'mm'),-3)) AND last_day(add_months(trunc(sysdate,'mm'),0)))
+        ORDER BY ANUNCIO.PRECO_CV DESC)
+  WHERE ROWNUM=1;
+  
+  SELECT * INTO VALOR_MAIS_ALTO_LEILAO
+  FROM (SELECT LEILAO.PRECO_FINAL
+        FROM LEILAO
+        WHERE LEILAO.ID_PRODUTO=COD_PRODUTO AND (LEILAO.DATA_FINAL BETWEEN (add_months(trunc(sysdate,'mm'),-3)) AND last_day(add_months(trunc(sysdate,'mm'),0)))
+        ORDER BY LEILAO.PRECO_FINAL DESC)
+  WHERE ROWNUM=1;
+      
+  IF VALOR_MAIS_ALTO_ANUNCIO > VALOR_MAIS_ALTO_LEILAO THEN
+    RETURN VALOR_MAIS_ALTO_ANUNCIO;
+  END IF;
+  IF VALOR_MAIS_ALTO_ANUNCIO < VALOR_MAIS_ALTO_LEILAO THEN
+    RETURN VALOR_MAIS_ALTO_LEILAO;
+  END IF;
+  IF VALOR_MAIS_ALTO_ANUNCIO = VALOR_MAIS_ALTO_LEILAO THEN
+    RETURN VALOR_MAIS_ALTO_ANUNCIO;  --RETORNA QUALQUER UM POIS SÃO AMBOS O MAIOR VALOR
+  END IF;
+
+          
+  EXCEPTION
+    WHEN ID_PRODUTO THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Código de produto ' || COD_PRODUTO || ' inválido.'); 
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');
+      
+END;
+/*TESTE
+set serveroutput on
+declare
+   resultado number;
+begin
+   -- Call the function
+   resultado:= VALOR_VENDA(1);
+   dbms_output.put_line(resultado);
+end;*/
+
+
+
+/*D) Criar a função numero_vendas que recebe como argumento o nome de um vendedor,
+uma data inicial e uma data final. Esta função deve retornar o somatório do número
+de produtos que ele vendeu, via ctt, nesse intervalo de tempo. A função deve lançar
+exceções (ver exceções abaixo).*/
+CREATE OR REPLACE FUNCTION NUMERO_VENDAS(NOME_VENDEDOR VARCHAR, DATAINICIAL DATE, DATAFINAL DATE) 
+RETURN NUMBER
+IS
+
+--Exceções
+NAME_VENDEDOR EXCEPTION;
+  PRAGMA EXCEPTION_INIT (NAME_VENDEDOR, -20109);
+
+--Variáveis
+R_EXCEPTION NUMBER;
+SOMATORIO NUMBER;
+
+BEGIN
+
+  --Vendedor existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM VENDEDOR
+  WHERE NOME LIKE NOME_VENDEDOR;
+  --Se o vendedor não existe lança exceção 
+  IF R_EXCEPTION=0 THEN
+    RAISE NAME_VENDEDOR;
+  END IF;
+
+  SELECT SUM(LEILAO.QUANTIDADE) INTO SOMATORIO
+  FROM LEILAO, VENDEDOR
+  WHERE LEILAO.ID_VENDEDOR=VENDEDOR.ID_VENDEDOR AND VENDEDOR.NOME LIKE NOME_VENDEDOR AND LEILAO.TIPO_PORTES LIKE 'CTT%' AND (LEILAO.DATA_FINAL BETWEEN DATAINICIAL AND DATAFINAL);
+  
+  RETURN SOMATORIO;
+  
+  EXCEPTION
+  WHEN NAME_VENDEDOR THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe o vendedor: ' || NOME_VENDEDOR);
+  WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE('Não foram encontrados dados.');
+  WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE('Erro!');
+ 
+END;
+/*TESTE
+set serveroutput on
+declare
+   resultado number;
+begin
+   -- Call the function
+   resultado:= NUMERO_VENDAS('Ricardo Lemos', '17.11.15', '18.01.15');
+   dbms_output.put_line(resultado);
+end;*/
+
+
+
+/*E) Criar o trigger quantidade_em_stock que, após cada venda, atualize a quantidade em
+stock e a quantidade vendida.*/
+CREATE OR REPLACE TRIGGER QUANTIDADE_EM_STOCK
+BEFORE INSERT ON LEILAO
+FOR EACH ROW
+
+DECLARE
+--Variáveis
+QUANTIDADE_ATUAL NUMBER;
+R_EXCEPTION NUMBER;
+
+--Exceções
+PRODUTO_INEXISTENTE EXCEPTION;
+  PRAGMA EXCEPTION_INIT(PRODUTO_INEXISTENTE, -20102 );
+QUANTIDADE_INSUFICIENTE EXCEPTION;
+  PRAGMA EXCEPTION_INIT(QUANTIDADE_INSUFICIENTE, -20106);
+
+BEGIN
+
+ IF INSERTING AND :NEW.TIPO_LEILAO = 0 THEN --Tipo de Leilão tem que ser venda para poder alterar stocks
+--Produto existe?
+    SELECT COUNT(*) INTO R_EXCEPTION
+    FROM PRODUTO
+    WHERE PRODUTO.ID_PRODUTO=:NEW.ID_PRODUTO;
+--Se não existe lança exceção
+    IF R_EXCEPTION=0 THEN
+      RAISE_APPLICATION_ERROR(-20102,'Código de produto ' || :NEW.ID_PRODUTO || ' inválido.');
+    END IF;
+--Quantidade em stock é suficiente?
+    SELECT STOCK INTO QUANTIDADE_ATUAL
+    FROM PRODUTO
+    WHERE PRODUTO.ID_PRODUTO=:NEW.ID_PRODUTO;
+--Se não for suficiente lança exceção
+    IF QUANTIDADE_ATUAL< :NEW.QUANTIDADE THEN
+      RAISE_APPLICATION_ERROR(-20106,'Não existe a quantidade ' || :NEW.QUANTIDADE || ' para venda.');
+    END IF;
+    
+    UPDATE PRODUTO 
+    SET STOCK=STOCK-:NEW.QUANTIDADE
+    WHERE ID_PRODUTO=:NEW.ID_PRODUTO;
+     
+ END IF;
+ 
+
+END;
+/
+/*TESTE
+INSERT INTO LEILAO(PRECO_COMPRA,PRECO_INICIAL,PRECO_FINAL,ID_LEILAO,ID_VENDEDOR,ID_PRODUTO,ID_COMPRADOR,DATA_INICIAL,DATA_FINAL)
+VALUES(800,820,900,19,1,1,1,TO_DATE('2018-01-07', 'YYYY-MM-DD'),TO_DATE('2018-01-08', 'YYYY-MM-DD'));*/
+
+
+
+/*F) Criar uma função ultima_venda que recebe o nome de um vendedor e retorna a data
+da última venda, sem ser em leilão, desse vendedor. A função deve lançar exceções
+(ver exceções abaixo)*/
+CREATE OR REPLACE FUNCTION ULTIMA_VENDA(NOME_VENDEDOR VARCHAR)
+RETURN VARCHAR2
+IS
+
+--Exceções
+NAME_VENDEDOR EXCEPTION;
+  PRAGMA EXCEPTION_INIT (NAME_VENDEDOR, -20109);
+
+--Variáveis
+DATA_ULTIMA_VENDA DATE;
+R_EXCEPTION NUMBER;
+
+BEGIN
+--Vendedor existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM VENDEDOR
+  WHERE NOME LIKE NOME_VENDEDOR;
+--Se não existe o vendedor lança exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE NAME_VENDEDOR;
+  END IF;
+
+  SELECT MAX(ANUNCIO.DATA_FINAL) INTO DATA_ULTIMA_VENDA
+  FROM ANUNCIO, VENDEDOR
+  WHERE ANUNCIO.ID_VENDEDOR=VENDEDOR.ID_VENDEDOR AND VENDEDOR.NOME LIKE NOME_VENDEDOR;
+      
+  RETURN DATA_ULTIMA_VENDA;
+
+  EXCEPTION
+    WHEN NAME_VENDEDOR THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe o vendedor: ' || NOME_VENDEDOR);
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE('Não foram encontrados dados.');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE('Erro.');
+
+END;
+/
+/*TESTE
+set serveroutput on
+declare
+   resultado date;
+begin
+   -- Call the function
+   resultado:= ULTIMA_VENDA ('João');
+   dbms_output.put_line(resultado);
+end;*/
+
+
+
+/*H)Implemente um trigger publicidade que, ao inserir um produto de um dado vendedor
+na base de dados, submeta um anúncio de publicidade a todos os clientes, que tenham
+manifestado interesse nesse produto.*/
+CREATE OR REPLACE TRIGGER PUBLICIDADE
+AFTER INSERT ON LEILAO 
+FOR EACH ROW
+DECLARE
+
+BEGIN
+
+  IF INSERTING AND :NEW.TIPO_LEILAO=0 THEN
+  
+    UPDATE PUBLICIDADE
+    SET MENSAGEM='Foi aberto o leilão ' || :NEW.ID_LEILAO || ' para o produto ' || :NEW.ID_PRODUTO
+    WHERE COD_PRODUTO=:NEW.ID_PRODUTO;
+    
+  END IF;
+  
+END;
+/
+
+
+
+/*I)Criar a função vendedores_com_produtos que recebe como argumento o código de
+um produto e a quantidade. A função deve retornar o nome do último vendedor que
+anunciou o produto em leilão. A função deve lançar exceções (ver exceções abaixo).*/
+CREATE OR REPLACE FUNCTION VENDEDORES_COM_PRODUTOS(COD_PRODUTO NUMBER, QUANT NUMBER)
+RETURN VARCHAR
+IS
+
+--Exceções
+ID_PRODUTO EXCEPTION;
+  PRAGMA EXCEPTION_INIT (ID_PRODUTO, -20102);
+  
+--Variáveis
+R_EXCEPTION NUMBER;
+NOME_VENDEDOR VARCHAR(50);
+
+
+BEGIN
+--Código do produto inválido?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM PRODUTO
+  WHERE ID_PRODUTO=COD_PRODUTO;
+  --Se o produto não existir lança exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE ID_PRODUTO;
+  END IF;
+  
+  SELECT * INTO NOME_VENDEDOR
+  FROM (SELECT VENDEDOR.NOME
+                   FROM LEILAO, VENDEDOR
+                   WHERE VENDEDOR.ID_VENDEDOR=LEILAO.ID_VENDEDOR AND LEILAO.ID_PRODUTO=COD_PRODUTO AND LEILAO.QUANTIDADE=QUANT AND LEILAO.DATA_FINAL IS NULL
+                   ORDER BY LEILAO.DATA_INICIAL DESC;)
+  WHERE ROWNUM=1;
+
+  RETURN NOME_VENDEDOR;
+
+  EXCEPTION
+    WHEN ID_PRODUTO THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Código de produto ' || COD_PRODUTO || ' inválido.'); 
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');
+
+END;
+/*TESTE
+set serveroutput on
+declare
+   resultado varchar(50);
+begin
+   -- Call the function
+   resultado:=  VENDEDORES_COM_PRODUTOS(23,1);
+   dbms_output.put_line(resultado);
+end;*/
+
+
+
+/*L)Implementar o procedimento alertas_publicidade que recebe como argumento um
+produto e que, para cada comprador que já comprou um artigo desse tipo, insira na
+tabela/campo que guarda os avisos, a seguinte mensagem “Muito obrigado pela
+escolha do nosso produto xpto”. Nota deve substituir a palavra xpto pelo produto que
+recebeu por argumento. O procedimento deve lançar exceções (ver exceções abaixo).*/
+CREATE OR REPLACE PROCEDURE SUBMETER_COMPRA_PUB(ID_PROD NUMBER)
+IS
+
+CURSOR C1 IS SELECT ID_COMPRADOR, ID_PRODUTO FROM LEILAO WHERE ID_PRODUTO=ID_PROD AND DATA_FINAL IS NOT NULL;
+                                  
+COD_PRODUTO EXCEPTION;
+  PRAGMA EXCEPTION_INIT(COD_PRODUTO,-20102);
+                                  
+ID_COMPRADOR_AUX NUMBER;
+ID_PRODUTO_AUX NUMBER;             
+R_EXCEPTION NUMBER;
+                                  
+BEGIN
+
+--Produto existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM PRODUTO
+  WHERE ID_PRODUTO=ID_PROD;
+--Se o produto não existe lança exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE COD_PRODUTO;
+  END IF;
+
+  OPEN C1;
+  LOOP
+    FETCH C1 INTO ID_COMPRADOR_AUX, ID_PRODUTO_AUX;
+    EXIT WHEN C1%NOTFOUND;
+    
+    UPDATE PUBLICIDADE 
+    SET MENSAGEM='Muito obrigada pela escolha do nosso produto ' || ID_PRODUTO_AUX
+    WHERE COD_COMPRADOR=ID_COMPRADOR_AUX AND COD_PRODUTO=ID_PRODUTO_AUX;
+      
+        
+  END LOOP;
+  CLOSE C1;
+
+  EXCEPTION
+    WHEN COD_PRODUTO THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Código de produto ' || ID_PROD || ' inválido.'); 
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');
+
+END;
+
+
+
+/*M)Criar o trigger compra garantindo sempre que for submetido um pedido de compra a
+um leilão com preço superior ou igual ao valor de venda para essa quantidade, este é
+automaticamente aceite (adjudicado), desde que haja em stock a quantia necessária
+desse produto, não contando essa licitação no leilão a decorrer. */
+CREATE OR REPLACE TRIGGER COMPRA
+AFTER INSERT ON LEILAO 
+FOR EACH ROW
+DECLARE
+LEILOES_N_EXISTEM EXCEPTION;
+  PRAGMA EXCEPTION_INIT(LEILOES_N_EXISTEM,-20108);
+QUANTIDADE_N_EXISTE EXCEPTION;
+  PRAGMA EXCEPTION_INIT(QUANTIDADE_N_EXISTE,-20106);
+PRODUTO_N_EXISTE EXCEPTION;
+  PRAGMA EXCEPTION_INIT(PRODUTO_N_EXISTE,-20102);  
+COMPRADOR_N_EXISTE EXCEPTION;
+  PRAGMA EXCEPTION_INIT(COMPRADOR_N_EXISTE,-20110);  
+STOCK_N_SUFICIENTE EXCEPTION;
+  PRAGMA EXCEPTION_INIT(STOCK_N_SUFICIENTE,-20118);  
+
+R_EXCEPTION NUMBER;
+
+BEGIN
+
+  IF INSERTING AND :NEW.TIPO_LEILAO=1 THEN --sempre que é feito um leilão de procura de produto
+--Verificar se existem leilões para o produto pedido
+    SELECT COUNT(*) INTO R_EXCEPTION
+    FROM LEILAO 
+    WHERE ID_PRODUTO=:NEW.ID_PRODUTO AND TIPO_LEILAO=0;
+--Se não existem lança exceção
+    IF R_EXCEPTION=0 THEN
+      RAISE LEILOES_N_EXISTEM;
+    END IF;
+--Verificar se existem leilões para a quantidade pedida
+    SELECT COUNT(*) INTO R_EXCEPTION
+    FROM LEILAO
+    WHERE ID_PRODUTO=:NEW.ID_PRODUTO AND QUANTIDADE=:NEW.QUANTIDADE AND TIPO_LEILAO=0;
+--Se não existem lança exceção
+    IF R_EXCEPTION=0 THEN 
+      RAISE QUANTIDADE_N_EXISTE;
+    END IF;
+--Verificar se o produto existe
+    SELECT COUNT(*) INTO R_EXCEPTION
+    FROM PRODUTO
+    WHERE ID_PRODUTO=:NEW.ID_PRODUTO;
+--Se não existe lança exceção
+    IF R_EXCEPTION=0 THEN 
+      RAISE PRODUTO_N_EXISTE;
+    END IF;
+--Verificar se o comprador existe
+    SELECT COUNT(*) INTO R_EXCEPTION
+    FROM COMPRADOR
+    WHERE ID_COMPRADOR=:NEW.ID_COMPRADOR;
+--Se não existe lança exceção
+    IF R_EXCEPTION=0 THEN 
+      RAISE COMPRADOR_N_EXISTE;
+    END IF;
+--Verificar se existe stock suficiente para o pedido
+    SELECT COUNT(*) INTO R_EXCEPTION
+    FROM PRODUTO
+    WHERE ID_PRODUTO=:NEW.ID_PRODUTO AND STOCK >= :NEW.QUANTIDADE;
+--Se não existe lança exceção
+    IF R_EXCEPTION=0 THEN 
+      RAISE STOCK_N_SUFICIENTE;
+    END IF;
+    
+    UPDATE LEILAO 
+    SET DATA_FINAL=:NEW.DATA_INICIAL, ID_COMPRADOR=:NEW.ID_COMPRADOR  
+    WHERE QUANTIDADE=:NEW.QUANTIDADE 
+    AND ID_PRODUTO=:NEW.ID_PRODUTO
+    AND PRECO_COMPRA<=:NEW.PRECO_COMPRA 
+    AND PRECO_INICIAL IS NULL
+    AND PRECO_FINAL IS NULL
+    AND PRECO_ATUAL IS NULL
+    AND TIPO_LEILAO=0;
+
+    UPDATE LEILAO
+    SET DATA_FINAL=SYSDATE
+    WHERE ID_PRODUTO=:NEW.ID_PRODUTO AND ID_LEILAO=:NEW.ID_LEILAO;
+    
+    UPDATE PRODUTO
+    SET STOCK=STOCK-:NEW.QUANTIDADE
+    WHERE ID_PRODUTO=:NEW.ID_PRODUTO;
+    
+  END IF;   
+  
+  EXCEPTION
+    WHEN LEILOES_N_EXISTEM THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram realizados leilões para o produto: ' || :NEW.ID_PRODUTO); 
+    WHEN QUANTIDADE_N_EXISTE THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe a quantidade: ' || :NEW.QUANTIDADE || ' para venda.');
+    WHEN PRODUTO_N_EXISTE THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Código de produto ' || :NEW.ID_PRODUTO || ' inválido');
+    WHEN COMPRADOR_N_EXISTE THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe o comprador: ' || :NEW.ID_COMPRADOR);
+    WHEN STOCK_N_SUFICIENTE THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe stock suficiente para o produto pedido');
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');
+    
+END;
+/
+/*INSERT INTO LEILAO(PRECO_COMPRA,TIPO_LEILAO,ID_LEILAO,ID_PRODUTO,ID_COMPRADOR,DATA_INICIAL) 
+VALUES(210,1,20,3,1,TO_DATE('2018-01-24', 'YYYY-MM-DD'));*/
+
+
+/*N)Crie a função tempo_medio_venda que recebe como argumento o id de um vendedor,
+e o id de um produto e retorna a média, em dias, que esse vendedor necessitou para 
+vender os seus produtos. Considere apenas produtos com vendas superiores a 3
+unidades.*/
+CREATE OR REPLACE FUNCTION TEMPO_MEDIA_VENDA(ID_VENDDOR NUMBER, ID_PROD NUMBER)
+RETURN NUMBER 
+IS
+
+--Exceções
+COD_PROD EXCEPTION;
+  PRAGMA EXCEPTION_INIT (COD_PROD, -20102);
+COD_VENDEDOR EXCEPTION;
+  PRAGMA EXCEPTION_INIT(COD_VENDEDOR, -20110);
+
+--Variáveis
+R_EXCEPTION NUMBER;
+MEDIA NUMBER;
+
+BEGIN
+--Produto existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM PRODUTO
+  WHERE ID_PRODUTO=ID_PROD;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE COD_PROD;
+  END IF;
+
+--Vendedor existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM VENDEDOR
+  WHERE ID_VENDEDOR=ID_VENDDOR;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE COD_VENDEDOR;
+  END IF;
+  
+  SELECT AVG(LEILAO.DATA_FINAL-LEILAO.DATA_INICIAL) INTO MEDIA
+  FROM LEILAO,VENDEDOR,PRODUTO
+  WHERE VENDEDOR.ID_VENDEDOR=ID_VENDDOR 
+  AND LEILAO.ID_VENDEDOR=ID_VENDDOR
+  AND PRODUTO.ID_PRODUTO=ID_PROD
+  AND LEILAO.ID_PRODUTO=ID_PROD
+  AND LEILAO.DATA_FINAL IS NOT NULL
+  AND LEILAO.TIPO_LEILAO=0
+  AND LEILAO.QUANTIDADE > 3;
+
+  RETURN MEDIA;
+  
+  EXCEPTION
+    WHEN COD_PROD THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Código de produto ' || ID_PROD || ' inválido.'); 
+    WHEN COD_VENDEDOR THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não existe o vendedor: ' || ID_VENDDOR);
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');
+    
+END;
+/*TESTE
+set serveroutput on
+declare
+   resultado number;
+begin
+   -- Call the function
+   resultado:= TEMPO_MEDIA_VENDA(8,2);
+   dbms_output.put_line(resultado);
+end;--*/
+
+
+
+/*O) Criar procedimento que recebe como argumento um valor e que atualize a comissão base dos compradores para esse valor.*/
+CREATE OR REPLACE PROCEDURE COMISS_BASE(NOVA_COMISS NUMBER)
+IS
+
+COMPRADORES_NAO_EXISTEM EXCEPTION;
+  PRAGMA EXCEPTION_INIT(COMPRADORES_NAO_EXISTEM,-20113);
+  
+--Variáveis
+R_EXCEPTION NUMBER;
+
+BEGIN
+--Compradores existe?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM COMPRADOR;
+--Se não existe lança exceção
+  IF  R_EXCEPTION=0 THEN
+    RAISE COMPRADORES_NAO_EXISTEM;
+  END IF;
+  
+  UPDATE COMPRADOR
+  SET COMISSAO_BASE=NOVA_COMISS;
+
+  EXCEPTION
+    WHEN COMPRADORES_NAO_EXISTEM THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Impossível atualizar comissão base para 0.3 uma vez que não existem compradores.');
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');  
+
+END;
+/*TEST
+EXECUTE COMISS_BASE(0.3);*/
+
+
+
+/*P) Criar função que recebe como argumento um código de um produto e
+retorna o valor mais baixo da venda efetuada desse produto nos últimos 5 meses.*/
+CREATE OR REPLACE FUNCTION VALOR_MINIMO(COD_PRODUTO NUMBER)
+RETURN NUMBER 
+IS
+
+--Excecões
+ID_PRODUTO EXCEPTION;
+  PRAGMA EXCEPTION_INIT (ID_PRODUTO, -20102);
+
+--Variáveis
+R_EXCEPTION NUMBER;
+VALOR_MAIS_ALTO_ANUNCIO NUMBER;
+VALOR_MAIS_ALTO_LEILAO NUMBER;
+
+BEGIN
+--Código do produto válido?
+  SELECT COUNT(*) INTO R_EXCEPTION
+  FROM PRODUTO
+  WHERE ID_PRODUTO=COD_PRODUTO;
+  --Se o produto não existir lança exceção
+  IF R_EXCEPTION=0 THEN
+    RAISE ID_PRODUTO;
+  END IF;
+
+  SELECT * INTO VALOR_MAIS_ALTO_ANUNCIO
+  FROM (SELECT ANUNCIO.PRECO_CV 
+        FROM ANUNCIO
+        WHERE ANUNCIO.ID_PRODUTO=COD_PRODUTO AND (ANUNCIO.DATA_FINAL BETWEEN (add_months(trunc(sysdate,'mm'),-5)) AND last_day(add_months(trunc(sysdate,'mm'),0)))
+        ORDER BY ANUNCIO.PRECO_CV ASC)
+  WHERE ROWNUM=1;
+  
+  SELECT * INTO VALOR_MAIS_ALTO_LEILAO
+  FROM (SELECT LEILAO.PRECO_FINAL
+        FROM LEILAO
+        WHERE LEILAO.ID_PRODUTO=COD_PRODUTO AND (LEILAO.DATA_FINAL BETWEEN (add_months(trunc(sysdate,'mm'),-5)) AND last_day(add_months(trunc(sysdate,'mm'),0)))
+        ORDER BY LEILAO.PRECO_FINAL ASC)
+  WHERE ROWNUM=1;
+      
+  IF VALOR_MAIS_ALTO_ANUNCIO > VALOR_MAIS_ALTO_LEILAO THEN
+    RETURN VALOR_MAIS_ALTO_ANUNCIO;
+  END IF;
+  IF VALOR_MAIS_ALTO_ANUNCIO < VALOR_MAIS_ALTO_LEILAO THEN
+    RETURN VALOR_MAIS_ALTO_LEILAO;
+  END IF;
+  IF VALOR_MAIS_ALTO_ANUNCIO = VALOR_MAIS_ALTO_LEILAO THEN
+    RETURN VALOR_MAIS_ALTO_ANUNCIO;  --RETORNA QUALQUER UM POIS SÃO AMBOS O MENOR VALOR
+  END IF;
+
+          
+  EXCEPTION
+    WHEN ID_PRODUTO THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Código de produto ' || COD_PRODUTO || ' inválido.'); 
+    WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Não foram encontrados dados');
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE(sqlcode || ': Erro!');
+      
+END;
+
+
+
+/*Q) Criar um trigger que insere na tabela HISTORICO os id's dos leilões que já foram concluídos.*/
+CREATE OR REPLACE TRIGGER ATUALIZA_HISTORICO
+AFTER INSERT ON LEILAO 
+FOR EACH ROW
+
+BEGIN
+
+  IF INSERTING AND :NEW.DATA_FINAL IS NOT NULL THEN
+  
+    INSERT INTO HISTORICO(ID_LEILAO) VALUES(:NEW.ID_LEILAO);
+    
+  END IF;
+  
+END;
+/
+/*TESTE
+INSERT INTO LEILAO(PRECO_COMPRA,PRECO_INICIAL,PRECO_FINAL,ID_LEILAO,ID_VENDEDOR,ID_PRODUTO,ID_COMPRADOR,DATA_INICIAL,DATA_FINAL)
+VALUES(81,82,84,20,1,5,2,TO_DATE('2018-01-15', 'YYYY-MM-DD'),TO_DATE('2018-01-16', 'YYYY-MM-DD'));*/
+
