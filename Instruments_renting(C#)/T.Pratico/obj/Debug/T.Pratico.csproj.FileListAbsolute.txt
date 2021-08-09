@@ -1,0 +1,19 @@
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS\POO\T.Pratico\T.Pratico\bin\Debug\T.Pratico.exe.config
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS\POO\T.Pratico\T.Pratico\bin\Debug\T.Pratico.exe
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS\POO\T.Pratico\T.Pratico\bin\Debug\T.Pratico.pdb
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS\POO\T.Pratico\T.Pratico\obj\Debug\T.Pratico.csprojResolveAssemblyReference.cache
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS\POO\T.Pratico\T.Pratico\obj\Debug\T.Pratico.exe
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS\POO\T.Pratico\T.Pratico\obj\Debug\T.Pratico.pdb
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS 2S\POO\T.Pratico\T.Pratico\bin\Debug\T.Pratico.exe.config
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS 2S\POO\T.Pratico\T.Pratico\obj\Debug\T.Pratico.exe
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS 2S\POO\T.Pratico\T.Pratico\obj\Debug\T.Pratico.pdb
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS 2S\POO\T.Pratico\T.Pratico\obj\Debug\T.Pratico.csprojResolveAssemblyReference.cache
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS 2S\POO\T.Pratico\T.Pratico\bin\Debug\T.Pratico.exe
+C:\Users\Brums\Dropbox\TRABALHOS PRATICOS 2S\POO\T.Pratico\T.Pratico\bin\Debug\T.Pratico.pdb
+C:\Users\Brums\Desktop\T.Pratico\T.Pratico\bin\Debug\T.Pratico.exe.config
+C:\Users\Brums\Desktop\T.Pratico\T.Pratico\bin\Debug\T.Pratico.exe
+C:\Users\Brums\Desktop\T.Pratico\T.Pratico\bin\Debug\T.Pratico.pdb
+C:\Users\Brums\Desktop\T.Pratico\T.Pratico\obj\Debug\T.Pratico.csproj.AssemblyReference.cache
+C:\Users\Brums\Desktop\T.Pratico\T.Pratico\obj\Debug\T.Pratico.csproj.CoreCompileInputs.cache
+C:\Users\Brums\Desktop\T.Pratico\T.Pratico\obj\Debug\T.Pratico.exe
+C:\Users\Brums\Desktop\T.Pratico\T.Pratico\obj\Debug\T.Pratico.pdb
