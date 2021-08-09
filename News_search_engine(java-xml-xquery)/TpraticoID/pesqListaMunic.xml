@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Resultado>
+   <Munic>
+      <nome>Município de Castelo de Paiva</nome>
+      <Num>4</Num>
+   </Munic>
+   <Munic>
+      <nome>Município de Carrazeda de Ansiães</nome>
+      <Num>3</Num>
+   </Munic>
+   <Munic>
+      <nome>Município de Lisboa</nome>
+      <Num>3</Num>
+   </Munic>
+   <Munic>
+      <nome>Município de Mira</nome>
+      <Num>2</Num>
+   </Munic>
+   <Munic>
+      <nome>Município de Oeiras</nome>
+      <Num>2</Num>
+   </Munic>
+</Resultado>

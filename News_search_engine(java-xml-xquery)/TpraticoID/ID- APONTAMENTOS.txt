@@ -1,0 +1,19 @@
+//Criar a link e meter o link
+        URL url = new URL("http://www.anmp.pt/image/munap/M5140b.jpg");
+        //Criar a imagem e dar o link
+        Image image = ImageIO.read(url);
+        
+        //Associar a imagem ao frame
+        IMAGEM.setIcon(new ImageIcon(image));
+
+
+----
+
+
+xml para array do top5
+
+fazer frame para mostrar as top 5 cams com mais noticias
+
+esconder a barra na janela de resultados
+
+esconder as janelas que nao presisam de estar true

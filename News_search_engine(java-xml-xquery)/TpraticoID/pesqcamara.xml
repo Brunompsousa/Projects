@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Resultado>
+   <Municipio>
+      <Número>8</Número>
+      <Nome>Lisboa</Nome>
+      <Presidente>Fernando Medina</Presidente>
+      <Mail>anmp@anmp.pt</Mail>
+      <site>http://www.cm-lisboa.pt</site>
+      <Telefone>217 988 000</Telefone>
+      <Freguesias>24 freguesias</Freguesias>
+      <Area>85,0 km2</Area>
+      <Habitantes>547 733 habitantes</Habitantes>
+      <imagem>http://www.anmp.pt/image/munap/M1100b.jpg</imagem>
+   </Municipio>
+</Resultado>
