@@ -1,0 +1,33 @@
+body{
+    text-align: center;
+    background: #BAD9DA;
+    font-size-adjust: 2em;
+}
+
+#scorebox{
+    background-color: white;
+    width: 240px;
+    border: 2px solid;
+    margin: 0 auto;
+    width: 244px; 
+}
+
+#scoretext{
+    
+    font-size: 20px;
+    
+}
+
+canvas {
+    
+    border: solid .2em #fff;
+    height: 90hv;
+    
+}
+
+hr {
+    margin-bottom: 0%;
+    margin-top: 0%;
+  border: 2;
+  width: 80%;
+}
